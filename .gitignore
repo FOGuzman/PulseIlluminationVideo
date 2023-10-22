@@ -9,3 +9,6 @@ code/models/EDSC_s_l1.ckpt
 code/comparators.py
 code/experimental_edsc.py
 code/experimental_film.py
+code/models/EDSC_f.py
+code/models/EDSC_s_lf.ckpt
+code/models/EDSC.py
