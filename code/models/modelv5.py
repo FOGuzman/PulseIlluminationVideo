@@ -490,30 +490,6 @@ class UNet(nn.Module):
 
         return final_out
 
-class StandardConv2D(nn.Module):
-
-    def conv2d_layer(self, in_channels, out_channels):
-        layers = []
-        layers.append(nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
-                                kernel_size=self.window, stride=1, padding=(self.window-1)//2))
-        layers.append(nn.LeakyReLU())
-        return nn.Sequential(*layers)
-
-
-    def __init__(self, in_channels,out_channels, window=3):
-        super(StandardConv2D, self).__init__()
-
-        self.window = window
-        self.inverse_layer = self.conv2d_layer(in_channels=3, out_channels=out_channels)
-        self.inverse_layer2 = self.conv2d_layer(in_channels=out_channels, out_channels=out_channels)
-
-
-    def forward(self, coded):
-    ## input (N,1,H,W) or (N,2,H,W)  
-        out = self.inverse_layer(coded)
-        out = self.inverse_layer2(out)
-        return out
-
 
 class cnnModel(nn.Module):
     def __init__(self,color_channels=1,units=2,dim=64,frames=8):
@@ -524,8 +500,6 @@ class cnnModel(nn.Module):
         FILM.float()
         self.FILM = FILM.cuda()
 
-
-        self.color_channels = color_channels
         #In
         self.unetL1   = UNet(in_channels=frames*2, out_channels=frames)
         self.unetL2   = UNet(in_channels=frames*2, out_channels=frames)
@@ -596,31 +570,6 @@ class cnnModel(nn.Module):
             nn.Conv2d(frames*2, frames, 3, stride=1, padding=1),
             nn.LeakyReLU(inplace=True))    
             
-    def bayer_init(self,y,Phi,Phi_s):
-        bayer = [[0,0], [0,1], [1,0], [1,1]]
-        b,f,h,w = Phi.shape
-        y_bayer = torch.zeros(b,1,h//2,w//2,4).to(y.device)
-        Phi_bayer = torch.zeros(b,f,h//2,w//2,4).to(y.device)
-        Phi_s_bayer = torch.zeros(b,1,h//2,w//2,4).to(y.device)
-        for ib in range(len(bayer)):
-            ba = bayer[ib]
-            y_bayer[...,ib] = y[:,:,ba[0]::2,ba[1]::2]
-            Phi_bayer[...,ib] = Phi[:,:,ba[0]::2,ba[1]::2]
-            Phi_s_bayer[...,ib] = Phi_s[:,:,ba[0]::2,ba[1]::2]
-        y_bayer = rearrange(y_bayer,"b f h w ba->(b ba) f h w")
-        Phi_bayer = rearrange(Phi_bayer,"b f h w ba->(b ba) f h w")
-        Phi_s_bayer = rearrange(Phi_s_bayer,"b f h w ba->(b ba) f h w")
-
-        x = At(y_bayer,Phi_bayer)
-        yb = A(x,Phi_bayer)
-        x = x + At(torch.div(y_bayer-yb,Phi_s_bayer),Phi_bayer)
-        x = rearrange(x,"(b ba) f h w->b f h w ba",b=b)
-        x_bayer = torch.zeros(b,f,h,w).to(y.device)
-        for ib in range(len(bayer)): 
-            ba = bayer[ib]
-            x_bayer[:,:,ba[0]::2, ba[1]::2] = x[...,ib]
-        x = x_bayer.unsqueeze(1)
-        return x
 
     def forward(self, y, args):
 
@@ -629,37 +578,35 @@ class cnnModel(nn.Module):
         de_meas = [torch.sum(de_meas[k],dim=1,keepdim=True).cuda() for k in range(args.frames)]
         xh = torch.stack(de_meas, dim=1)[:,:,0,:,:]
 
-        if self.color_channels==3:
-            x = self.bayer_init(y)
-        else:
-            ys2 = Tim.resize(y,args.resolution[-1]//2)
-            ys3 = Tim.resize(y,args.resolution[-1]//2//2)
 
-            xp1 = self.invNet1(y)
-            xp2 = self.invNet2(ys2)
-            xp3 = self.invNet3(ys3)
+        ys2 = Tim.resize(y,args.resolution[-1]//2)
+        ys3 = Tim.resize(y,args.resolution[-1]//2//2)
 
-            xpu2 = Tim.resize(xp2,args.resolution)
-            xpu3 = Tim.resize(xp3,args.resolution)
+        xp1 = self.invNet1(y)
+        xp2 = self.invNet2(ys2)
+        xp3 = self.invNet3(ys3)
 
-            xa = xp1+xpu2+xpu3
-            xb = (xp1-xh)+(xpu2-xh)+(xpu3-xh)
+        xpu2 = Tim.resize(xp2,args.resolution)
+        xpu3 = Tim.resize(xp3,args.resolution)
+
+        xa = xp1+xpu2+xpu3
+        xb = (xp1-xh)+(xpu2-xh)+(xpu3-xh)
 
 
-            xs1 = torch.cat((xa,xb),dim=1)          
-            xs2 = Tim.resize(xs1,args.resolution[-1]//2)
-            xs3 = Tim.resize(xs2,args.resolution[-1]//2//2)
+        xs1 = torch.cat((xa,xb),dim=1)          
+        xs2 = Tim.resize(xs1,args.resolution[-1]//2)
+        xs3 = Tim.resize(xs2,args.resolution[-1]//2//2)
 
-            xo1 = self.unetL1(xs1)
-            xo2 = self.unetL2(xs2)
-            xo3 = self.unetL3(xs3)
-            
-            xo2_r = Tim.resize(xo2,args.resolution)
-            xo3_r = Tim.resize(xo3,args.resolution)
+        xo1 = self.unetL1(xs1)
+        xo2 = self.unetL2(xs2)
+        xo3 = self.unetL3(xs3)
+        
+        xo2_r = Tim.resize(xo2,args.resolution)
+        xo3_r = Tim.resize(xo3,args.resolution)
 
-            xst_in = xo1+xo2_r+xo3_r
-            
-            xin = xst_in.unsqueeze(1)
+        xst_in = xo1+xo2_r+xo3_r
+        
+        xin = xst_in.unsqueeze(1)
       
         out = self.token_gen(xin)
         for layer in self.layers:
