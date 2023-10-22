@@ -14,19 +14,21 @@ from torch.utils.data import DataLoader
 from torchmetrics.image import StructuralSimilarityIndexMeasure, PeakSignalNoiseRatio
 import time
 import numpy as np
+import scipy.io as scio
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config",type=str,default='./config/default_config.py')
-parser.add_argument("--work_dir",type=str,default='/full_modelv4/')
+parser.add_argument("--work_dir",type=str,default='/full_modelv5/')
 parser.add_argument("--test_dataset_path",type=str,default='./dataset/Preprocess_test_dataset/')
 parser.add_argument("--mask_path",type=str,default='./masks/shutter_mask16.mat')
-parser.add_argument("--model_module",type=str,default='base_model')
+parser.add_argument("--model_module",type=str,default='modelv5')
 parser.add_argument('--gpu', default="0", type=str)
 parser.add_argument("--resolution",type=eval,default=[128,128])
 parser.add_argument("--frames",type=int,default=16)
 parser.add_argument("--normalize",type=int,default=0)
 parser.add_argument("--sub_sampling",type=int,default=1)
-parser.add_argument("--checkpoints",type=str,default='./training_results/baseline/checkpoint/epoch_127.pth')
+parser.add_argument("--checkpoints",type=str,default='./training_results/modelV5/checkpoint/epoch_194.pth')
+parser.add_argument("--saveRecons",type=str,default='./training_results/modelV5/simulation_results/')
 
 args = parser.parse_args()
 args.device = "cuda"
@@ -39,6 +41,9 @@ print('The number of GPU is {} using {}'.format(n_gpu,args.gpu))
 
 if __name__ == '__main__':
 
+    if not os.path.exists(args.saveRecons):
+        os.makedirs(args.saveRecons)   
+   
     ## Load cuda devide
     device = args.device
 
@@ -69,7 +74,7 @@ if __name__ == '__main__':
     PSNRV,SSIMV,TIMEV = [],[],[]
     PSNRF,SSIMF,TIMEF = [],[],[]
     PSNRE,SSIME,TIMEE = [],[],[]
-    for iteration, data in tqdm(enumerate(test_dataloader),
+    for itera, data in tqdm(enumerate(test_dataloader),
                                  desc ="Reconstructing... ",colour="red",
                                  total=len(test_dataloader),
                                  ascii=' 123456789═'):
@@ -84,6 +89,7 @@ if __name__ == '__main__':
 
             t1 = time.time()
             model_out = model(meas_f,args) 
+            model_out = torch.cat((gt[:,0:1,:,:],model_out[:,1:-1,:,:],gt[:,-1:,:,:]),1)
             t_model = time.time()-t1
 
             t2 = time.time()
@@ -107,6 +113,13 @@ if __name__ == '__main__':
             ref = ref_out.cpu()
             ref2 = EDS_out.cpu()
 
+        gt_s = gtc.squeeze().permute(1,2,0).numpy()
+        meas_s = meas_f.cpu().squeeze().permute(1,2,0).numpy()
+        model_s = moc.squeeze().permute(1,2,0).numpy()
+        film_s  = ref.squeeze().permute(1,2,0).numpy()
+        edsc_s  = ref2.squeeze().permute(1,2,0).numpy()
+
+        scio.savemat(args.saveRecons + str(itera) + ".mat", {'gt':gt_s,'meas':meas_s,'ours':model_s,'film':film_s,'edsc':edsc_s})
         psnr_val = psnr(gtc*255,moc*255)
         ssim_val = ssim(gtc*255,moc*255) 
 
