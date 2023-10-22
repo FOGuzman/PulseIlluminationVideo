@@ -6,3 +6,6 @@ code/models/film_net_fp32.pt
 code/base_mode-lossv2/
 code/models/EDSC_m.ckpt
 code/models/EDSC_s_l1.ckpt
+code/comparators.py
+code/experimental_edsc.py
+code/experimental_film.py
