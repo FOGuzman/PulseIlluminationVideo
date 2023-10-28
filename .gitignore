@@ -1,5 +1,6 @@
 *.pyc
 code/dataset/
+code/CameraReady_data/
 code/training_results/
 code/train_results/
 code/models/film_net_fp32.pt
@@ -7,8 +8,6 @@ code/base_mode-lossv2/
 code/models/EDSC_m.ckpt
 code/models/EDSC_s_l1.ckpt
 code/comparators.py
-code/experimental_edsc.py
-code/experimental_film.py
 code/models/EDSC_f.py
 code/models/EDSC_s_lf.ckpt
 code/models/EDSC.py

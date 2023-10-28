@@ -613,6 +613,6 @@ class cnnModel(nn.Module):
             out = layer(out)
         out = self.conv2(out)
 
-        if self.color_channels!=3:
-            out = out.squeeze(1)
+
+        out = out.squeeze(1)
         return out
