@@ -29,3 +29,34 @@ This repository contains two main codes. The MATLAB code includes the basic func
 To train a diffractive element, we have also provided an implementation of the same equations in PyTorch.
 
 ## HowTo
+
+
+
+
+
+
+# Citation
+If you find our project useful, please cite:
+
+```
+@article{guzman2023compressive,
+  title={Compressive video via IR-pulsed illumination},
+  author={Guzm{\'a}n, Felipe and Skowronek, James and Vera, Esteban and Brady, David J},
+  journal={Optics Express},
+  volume={31},
+  number={23},
+  pages={39201--39212},
+  year={2023},
+  publisher={Optica Publishing Group}
+}
+```
+
+
+## Acknowledgement
+The codes are based on [STFormer](https://github.com/ucaswangls/STFormer), 
+we also refer to codes in [FILM](https://github.com/caffeinism/FiLM-pytorch), 
+[EDSC](https://github.com/Xianhang/EDSC-pytorch). Thanks for sharing the code!.
+
+# Contact
+You can contact Felipe Guzman by sending mail to felipe.guzman.v@mail.pucv.cl for questions regarding this repository
+
