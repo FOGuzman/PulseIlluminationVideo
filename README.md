@@ -25,7 +25,7 @@ conda install pytorch==1.10.1 torchvision==0.11.2 torchaudio==0.10.1 cudatoolkit
 ```
 
 # Description
-This codes is used to train the proposed model with the [DAVIS2017].(https://davischallenge.org/davis2017/code.html) dataset
+This codes is used to train the proposed model with the [DAVIS2017](https://davischallenge.org/davis2017/code.html) dataset
 
 
 
