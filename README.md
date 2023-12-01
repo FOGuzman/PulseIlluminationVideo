@@ -25,13 +25,7 @@ conda install pytorch==1.10.1 torchvision==0.11.2 torchaudio==0.10.1 cudatoolkit
 ```
 
 # Description
-This repository contains two main codes. The MATLAB code includes the basic functions extracted from [OOMAO](https://github.com/rconan/OOMAO), which are used for the analysis of results.
-To train a diffractive element, we have also provided an implementation of the same equations in PyTorch.
-
-## HowTo
-
-
-
+This codes is used to train the proposed model with the [DAVIS2017].(https://davischallenge.org/davis2017/code.html) dataset
 
 
 
